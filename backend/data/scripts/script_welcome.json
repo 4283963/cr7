@@ -1,0 +1,66 @@
+{
+  "id": "script_welcome",
+  "name": "欢迎动作",
+  "description": "唐僧双手合十行礼的简单动作",
+  "characterId": "char_tangseng",
+  "duration": 4,
+  "fps": 30,
+  "tracks": [
+    {
+      "boneId": "head",
+      "boneName": "头部",
+      "keyframes": [
+        { "time": 0, "values": { "angle": 90 } },
+        { "time": 2, "values": { "angle": 85 } },
+        { "time": 4, "values": { "angle": 90 } }
+      ],
+      "interpType": "linear"
+    },
+    {
+      "boneId": "left_upper_arm",
+      "boneName": "左上臂",
+      "keyframes": [
+        { "time": 0, "values": { "angle": 270 } },
+        { "time": 1.5, "values": { "angle": 240 } },
+        { "time": 2.5, "values": { "angle": 240 } },
+        { "time": 4, "values": { "angle": 270 } }
+      ],
+      "interpType": "linear"
+    },
+    {
+      "boneId": "left_lower_arm",
+      "boneName": "左前臂",
+      "keyframes": [
+        { "time": 0, "values": { "angle": 270 } },
+        { "time": 1.5, "values": { "angle": 200 } },
+        { "time": 2.5, "values": { "angle": 200 } },
+        { "time": 4, "values": { "angle": 270 } }
+      ],
+      "interpType": "linear"
+    },
+    {
+      "boneId": "right_upper_arm",
+      "boneName": "右上臂",
+      "keyframes": [
+        { "time": 0, "values": { "angle": 90 } },
+        { "time": 1.5, "values": { "angle": 120 } },
+        { "time": 2.5, "values": { "angle": 120 } },
+        { "time": 4, "values": { "angle": 90 } }
+      ],
+      "interpType": "linear"
+    },
+    {
+      "boneId": "right_lower_arm",
+      "boneName": "右前臂",
+      "keyframes": [
+        { "time": 0, "values": { "angle": 90 } },
+        { "time": 1.5, "values": { "angle": 160 } },
+        { "time": 2.5, "values": { "angle": 160 } },
+        { "time": 4, "values": { "angle": 90 } }
+      ],
+      "interpType": "linear"
+    }
+  ],
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:00:00Z"
+}
