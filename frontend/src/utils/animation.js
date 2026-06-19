@@ -65,15 +65,15 @@ export function calculateBonePositions(bones, angleOverrides = {}, baseX = 0, ba
   const { boneMap, childrenMap } = buildBoneHierarchy(bones)
   const positions = {}
 
-  function traverse(boneId, parentX, parentY, parentAngle) {
+  function traverse(boneId, parentX, parentY, parentAngle, isRoot = false) {
     const bone = boneMap.get(boneId)
     if (!bone) return
 
     const angle = (angleOverrides[boneId] !== undefined ? angleOverrides[boneId] : bone.baseAngle)
-    const totalAngle = parentAngle + angle - bone.baseAngle
+    const totalAngle = parentAngle + angle
 
-    const startX = parentX + bone.x
-    const startY = parentY + bone.y
+    const startX = isRoot ? parentX : parentX + bone.x
+    const startY = isRoot ? parentY : parentY + bone.y
 
     const rad = degToRad(totalAngle)
     const endX = startX + Math.cos(rad) * bone.length
@@ -85,19 +85,19 @@ export function calculateBonePositions(bones, angleOverrides = {}, baseX = 0, ba
       startY,
       endX,
       endY,
-      currentAngle: totalAngle,
+      currentAngle: angle,
       worldAngle: totalAngle
     }
 
     const children = childrenMap.get(boneId) || []
     for (const childId of children) {
-      traverse(childId, endX, endY, totalAngle)
+      traverse(childId, endX, endY, totalAngle, false)
     }
   }
 
   const rootBone = bones.find(b => b.parentId === '' || !b.parentId)
   if (rootBone) {
-    traverse(rootBone.id, baseX + rootBone.x, baseY + rootBone.y, 0)
+    traverse(rootBone.id, baseX, baseY, 0, true)
   }
 
   return positions

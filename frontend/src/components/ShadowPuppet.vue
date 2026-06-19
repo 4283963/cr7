@@ -180,7 +180,11 @@ function onSvgMouseMove(event) {
   const point = getSvgPoint(event)
   const dx = point.x - bone.startX
   const dy = point.y - bone.startY
-  let angle = Math.atan2(dy, dx) * 180 / Math.PI
+  const worldAngle = Math.atan2(dy, dx) * 180 / Math.PI
+  
+  const parentBone = character.value?.bones.find(b => b.id === bone.parentId)
+  const parentWorldAngle = parentBone ? (bonePositions.value[parentBone.id]?.worldAngle || 0) : 0
+  let angle = worldAngle - parentWorldAngle
   
   angle = Math.max(bone.minAngle, Math.min(bone.maxAngle, angle))
   
