@@ -4,15 +4,29 @@
   "description": "唐僧双手合十行礼的简单动作",
   "characterId": "char_tangseng",
   "duration": 4,
-  "fps": 30,
   "tracks": [
     {
       "boneId": "head",
       "boneName": "头部",
       "keyframes": [
-        { "time": 0, "values": { "angle": 90 } },
-        { "time": 2, "values": { "angle": 85 } },
-        { "time": 4, "values": { "angle": 90 } }
+        {
+          "time": 0,
+          "values": {
+            "angle": 90
+          }
+        },
+        {
+          "time": 2,
+          "values": {
+            "angle": 85
+          }
+        },
+        {
+          "time": 4,
+          "values": {
+            "angle": 90
+          }
+        }
       ],
       "interpType": "linear"
     },
@@ -20,10 +34,30 @@
       "boneId": "left_upper_arm",
       "boneName": "左上臂",
       "keyframes": [
-        { "time": 0, "values": { "angle": 270 } },
-        { "time": 1.5, "values": { "angle": 240 } },
-        { "time": 2.5, "values": { "angle": 240 } },
-        { "time": 4, "values": { "angle": 270 } }
+        {
+          "time": 0,
+          "values": {
+            "angle": 270
+          }
+        },
+        {
+          "time": 1.5,
+          "values": {
+            "angle": 240
+          }
+        },
+        {
+          "time": 2.5,
+          "values": {
+            "angle": 240
+          }
+        },
+        {
+          "time": 4,
+          "values": {
+            "angle": 270
+          }
+        }
       ],
       "interpType": "linear"
     },
@@ -31,10 +65,30 @@
       "boneId": "left_lower_arm",
       "boneName": "左前臂",
       "keyframes": [
-        { "time": 0, "values": { "angle": 270 } },
-        { "time": 1.5, "values": { "angle": 200 } },
-        { "time": 2.5, "values": { "angle": 200 } },
-        { "time": 4, "values": { "angle": 270 } }
+        {
+          "time": 0,
+          "values": {
+            "angle": 270
+          }
+        },
+        {
+          "time": 1.5,
+          "values": {
+            "angle": 200
+          }
+        },
+        {
+          "time": 2.5,
+          "values": {
+            "angle": 200
+          }
+        },
+        {
+          "time": 4,
+          "values": {
+            "angle": 270
+          }
+        }
       ],
       "interpType": "linear"
     },
@@ -42,10 +96,30 @@
       "boneId": "right_upper_arm",
       "boneName": "右上臂",
       "keyframes": [
-        { "time": 0, "values": { "angle": 90 } },
-        { "time": 1.5, "values": { "angle": 120 } },
-        { "time": 2.5, "values": { "angle": 120 } },
-        { "time": 4, "values": { "angle": 90 } }
+        {
+          "time": 0,
+          "values": {
+            "angle": 90
+          }
+        },
+        {
+          "time": 1.5,
+          "values": {
+            "angle": 120
+          }
+        },
+        {
+          "time": 2.5,
+          "values": {
+            "angle": 120
+          }
+        },
+        {
+          "time": 4,
+          "values": {
+            "angle": 90
+          }
+        }
       ],
       "interpType": "linear"
     },
@@ -53,14 +127,85 @@
       "boneId": "right_lower_arm",
       "boneName": "右前臂",
       "keyframes": [
-        { "time": 0, "values": { "angle": 90 } },
-        { "time": 1.5, "values": { "angle": 160 } },
-        { "time": 2.5, "values": { "angle": 160 } },
-        { "time": 4, "values": { "angle": 90 } }
+        {
+          "time": 0,
+          "values": {
+            "angle": 90
+          }
+        },
+        {
+          "time": 1.5,
+          "values": {
+            "angle": 160
+          }
+        },
+        {
+          "time": 2.5,
+          "values": {
+            "angle": 160
+          }
+        },
+        {
+          "time": 4,
+          "values": {
+            "angle": 90
+          }
+        }
       ],
       "interpType": "linear"
     }
   ],
+  "fps": 30,
+  "audioTrack": {
+    "fileName": "",
+    "fileSize": 0,
+    "duration": 4,
+    "volume": 0.9,
+    "startTime": 0,
+    "beats": [
+      {
+        "time": 0.25,
+        "label": "咚",
+        "enabled": true
+      },
+      {
+        "time": 0.75,
+        "label": "锵",
+        "enabled": true
+      },
+      {
+        "time": 1.25,
+        "label": "咚",
+        "enabled": true
+      },
+      {
+        "time": 1.75,
+        "label": "锵",
+        "enabled": true
+      },
+      {
+        "time": 2.25,
+        "label": "咚",
+        "enabled": true
+      },
+      {
+        "time": 2.75,
+        "label": "锵",
+        "enabled": true
+      },
+      {
+        "time": 3.25,
+        "label": "咚",
+        "enabled": true
+      },
+      {
+        "time": 3.75,
+        "label": "锵",
+        "enabled": true
+      }
+    ],
+    "syncTolerance": 0.07
+  },
   "createdAt": "2024-01-01T00:00:00Z",
-  "updatedAt": "2024-01-01T00:00:00Z"
+  "updatedAt": "2026-06-19T08:20:39+08:00"
 }

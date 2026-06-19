@@ -3,6 +3,7 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -14,14 +15,17 @@ import (
 type Storage struct {
 	charactersDir string
 	scriptsDir    string
+	audioDir      string
 }
 
-func New(charactersDir, scriptsDir string) *Storage {
+func New(charactersDir, scriptsDir, audioDir string) *Storage {
 	os.MkdirAll(charactersDir, 0755)
 	os.MkdirAll(scriptsDir, 0755)
+	os.MkdirAll(audioDir, 0755)
 	return &Storage{
 		charactersDir: charactersDir,
 		scriptsDir:    scriptsDir,
+		audioDir:      audioDir,
 	}
 }
 
@@ -100,12 +104,24 @@ func (s *Storage) ListScripts() ([]models.ScriptListEntry, error) {
 		if err := json.Unmarshal(data, &s); err != nil {
 			continue
 		}
+		hasAudio := false
+		beatCount := 0
+		if s.AudioTrack != nil {
+			hasAudio = s.AudioTrack.FileName != ""
+			for _, b := range s.AudioTrack.Beats {
+				if b.Enabled {
+					beatCount++
+				}
+			}
+		}
 		scripts = append(scripts, models.ScriptListEntry{
 			ID:          s.ID,
 			Name:        s.Name,
 			Description: s.Description,
 			CharacterID: s.CharacterID,
 			Duration:    s.Duration,
+			HasAudio:    hasAudio,
+			BeatCount:   beatCount,
 			CreatedAt:   s.CreatedAt,
 			UpdatedAt:   s.UpdatedAt,
 		})
@@ -170,4 +186,41 @@ func (s *Storage) DuplicateScript(id, newName string) (*models.Script, error) {
 	}
 
 	return &newScript, nil
+}
+
+func (s *Storage) AudioDir() string {
+	return s.audioDir
+}
+
+func (s *Storage) SaveAudio(scriptID string, fileName string, file io.Reader) (string, int64, error) {
+	scriptDir := filepath.Join(s.audioDir, scriptID)
+	os.MkdirAll(scriptDir, 0755)
+
+	storedName := fmt.Sprintf("%d_%s", time.Now().Unix(), fileName)
+	storedPath := filepath.Join(scriptDir, storedName)
+
+	out, err := os.Create(storedPath)
+	if err != nil {
+		return "", 0, err
+	}
+	defer out.Close()
+
+	size, err := io.Copy(out, file)
+	if err != nil {
+		return "", 0, err
+	}
+
+	return storedName, size, nil
+}
+
+func (s *Storage) AudioPath(scriptID, fileName string) string {
+	return filepath.Join(s.audioDir, scriptID, fileName)
+}
+
+func (s *Storage) DeleteAudio(scriptID, fileName string) error {
+	path := s.AudioPath(scriptID, fileName)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	}
+	return os.Remove(path)
 }

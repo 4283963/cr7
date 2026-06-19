@@ -78,3 +78,51 @@ export function duplicateScript(id, name) {
     body: JSON.stringify({ name })
   })
 }
+
+export function uploadAudio(scriptId, file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData()
+    formData.append('audio', file)
+
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', BASE_URL + `/scripts/${scriptId}/audio`)
+    xhr.upload.onprogress = (e) => {
+      if (onProgress && e.lengthComputable) {
+        onProgress(e.loaded / e.total)
+      }
+    }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText))
+      } else {
+        reject(new Error(`Upload failed: ${xhr.status}`))
+      }
+    }
+    xhr.onerror = () => reject(new Error('Upload failed'))
+    xhr.send(formData)
+  })
+}
+
+export function getAudioUrl(scriptId, fileName) {
+  return BASE_URL + `/scripts/${scriptId}/audio/${fileName}`
+}
+
+export function deleteAudio(scriptId) {
+  return request(`/scripts/${scriptId}/audio`, {
+    method: 'DELETE'
+  })
+}
+
+export function updateBeats(scriptId, beatsData) {
+  return request(`/scripts/${scriptId}/beats`, {
+    method: 'PUT',
+    body: JSON.stringify(beatsData)
+  })
+}
+
+export function analyzeBeats(scriptId, bpm, offset = 0) {
+  return request(`/scripts/${scriptId}/analyze-beats`, {
+    method: 'POST',
+    body: JSON.stringify({ bpm, offset })
+  })
+}

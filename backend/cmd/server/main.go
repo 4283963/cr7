@@ -18,11 +18,13 @@ func main() {
 
 	charactersDir := filepath.Join(basepath, "data", "characters")
 	scriptsDir := filepath.Join(basepath, "data", "scripts")
+	audioDir := filepath.Join(basepath, "data", "audio")
 
-	store := storage.New(charactersDir, scriptsDir)
+	store := storage.New(charactersDir, scriptsDir, audioDir)
 	h := handlers.New(store)
 
 	r := gin.Default()
+	r.MaxMultipartMemory = 32 << 20
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
@@ -50,6 +52,12 @@ func main() {
 			scripts.PUT("/:id", h.UpdateScript)
 			scripts.DELETE("/:id", h.DeleteScript)
 			scripts.POST("/:id/duplicate", h.DuplicateScript)
+
+			scripts.POST("/:id/audio", h.UploadAudio)
+			scripts.GET("/:id/audio/:fileName", h.GetAudio)
+			scripts.DELETE("/:id/audio", h.DeleteAudio)
+			scripts.PUT("/:id/beats", h.UpdateBeats)
+			scripts.POST("/:id/analyze-beats", h.AnalyzeBeats)
 		}
 	}
 

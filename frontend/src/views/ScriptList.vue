@@ -24,7 +24,11 @@
           <div class="script-icon">🎭</div>
           <div class="script-title-section">
             <h3 class="script-name">{{ script.name }}</h3>
-            <span class="script-duration">{{ formatDuration(script.duration) }}</span>
+            <div class="script-meta-row">
+              <span class="script-duration">{{ formatDuration(script.duration) }}</span>
+              <span v-if="script.hasAudio" class="audio-badge" title="已添加鼓点音频">♪</span>
+              <span v-if="script.beatCount > 0" class="beat-badge" :title="script.beatCount + ' 个节拍点'">🥁 {{ script.beatCount }}</span>
+            </div>
           </div>
         </div>
         <p class="script-description">{{ script.description || '暂无描述' }}</p>
@@ -292,6 +296,31 @@ async function deleteScriptItem(id) {
   font-size: 12px;
   color: #e8b059;
   font-family: 'Courier New', monospace;
+}
+
+.script-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.audio-badge {
+  font-size: 13px;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.12);
+  border-radius: 4px;
+  padding: 0 6px;
+  line-height: 16px;
+}
+
+.beat-badge {
+  font-size: 10px;
+  font-weight: 500;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: 10px;
+  padding: 1px 7px;
 }
 
 .script-description {

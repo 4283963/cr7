@@ -66,7 +66,7 @@
         </div>
       </div>
 
-      <div class="editor-right">
+      <div class="editor-right" v-if="!showAudioPanel">
         <div class="properties-panel">
           <div class="panel-header">
             <span class="panel-title">剧本属性</span>
@@ -118,6 +118,8 @@
           </div>
         </div>
       </div>
+
+      <AudioPanel v-else @close="showAudioPanel = false" />
     </div>
 
     <div class="editor-timeline">
@@ -125,6 +127,7 @@
         @time-change="onTimeChange"
         @keyframe-select="onKeyframeSelect"
         @track-select="onTrackSelect"
+        @open-audio-panel="showAudioPanel = true"
       />
     </div>
 
@@ -141,6 +144,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import ShadowPuppet from '@/components/ShadowPuppet.vue'
 import Timeline from '@/components/Timeline.vue'
+import AudioPanel from '@/components/AudioPanel.vue'
 import { useEditorStore } from '@/stores/editor'
 import { formatTime } from '@/utils/animation'
 
@@ -155,6 +159,7 @@ const isSaved = ref(true)
 const isEditingName = ref(false)
 const editName = ref('')
 const nameInput = ref(null)
+const showAudioPanel = ref(false)
 
 onMounted(async () => {
   const scriptId = route.params.id
@@ -492,6 +497,16 @@ function getBoneAngleDisplay(boneId) {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.editor-right:has(.audio-panel) {
+  width: 440px;
+  padding: 16px 16px 16px 0;
+}
+
+.editor-right + .audio-panel {
+  width: 440px;
+  flex-shrink: 0;
 }
 
 .properties-panel,

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getCharacter, getScript, updateScript, getScripts, createScript, deleteScript, duplicateScript } from '@/api'
+import { getCharacter, getScript, updateScript, getScripts, createScript, deleteScript, duplicateScript, uploadAudio, getAudioUrl, deleteAudio, updateBeats, analyzeBeats } from '@/api'
 import { interpolateKeyframes, calculateBonePositions } from '@/utils/animation'
 
 export const useEditorStore = defineStore('editor', {
@@ -12,14 +12,26 @@ export const useEditorStore = defineStore('editor', {
     selectedKeyframe: null,
     playInterval: null,
     bonePositions: {},
-    scriptsList: []
+    scriptsList: [],
+
+    audioElement: null,
+    audioUrl: '',
+    audioLoaded: false,
+    audioDuration: 0,
+    isAudioPlaying: false,
+    syncedKeyframes: new Map(),
+
+    beatFlash: null
   }),
 
   getters: {
     duration: (state) => state.script?.duration || 10,
     fps: (state) => state.script?.fps || 30,
     tracks: (state) => state.script?.tracks || [],
-    bones: (state) => state.character?.bones || []
+    bones: (state) => state.character?.bones || [],
+    audioTrack: (state) => state.script?.audioTrack || null,
+    beats: (state) => state.script?.audioTrack?.beats || [],
+    syncTolerance: (state) => state.script?.audioTrack?.syncTolerance || 0.08
   },
 
   actions: {
@@ -29,12 +41,15 @@ export const useEditorStore = defineStore('editor', {
     },
 
     async loadScript(scriptId) {
+      this.destroyAudio()
       this.script = await getScript(scriptId)
       if (this.script?.characterId) {
         this.character = await getCharacter(this.script.characterId)
       }
       this.currentTime = 0
       this.updateBonePositions()
+      this.initAudioFromScript()
+      this.checkAllKeyframesSynced()
       return this.script
     },
 
@@ -76,6 +91,7 @@ export const useEditorStore = defineStore('editor', {
     async deleteScript(id) {
       await deleteScript(id)
       if (this.script?.id === id) {
+        this.destroyAudio()
         this.script = null
         this.character = null
       }
@@ -88,6 +104,13 @@ export const useEditorStore = defineStore('editor', {
     setTime(time) {
       this.currentTime = Math.max(0, Math.min(this.duration, time))
       this.updateBonePositions()
+      this.checkBeatsAtCurrentTime()
+      if (this.audioElement && this.isAudioPlaying) {
+        const audioTime = time + (this.script?.audioTrack?.startTime || 0)
+        if (Math.abs(this.audioElement.currentTime - audioTime) > 0.1) {
+          this.audioElement.currentTime = Math.max(0, audioTime)
+        }
+      }
     },
 
     updateBonePositions() {
@@ -109,17 +132,93 @@ export const useEditorStore = defineStore('editor', {
       )
     },
 
+    initAudioFromScript() {
+      if (typeof window === 'undefined') return
+      const at = this.script?.audioTrack
+      if (!at || !at.fileName) {
+        this.destroyAudio()
+        return
+      }
+
+      const url = getAudioUrl(this.script.id, at.fileName)
+      this.audioUrl = url
+      this.audioLoaded = false
+      this.audioDuration = at.duration || this.duration
+
+      if (this.audioElement) {
+        this.audioElement.pause()
+        this.audioElement.src = url
+      } else {
+        this.audioElement = new Audio()
+        this.audioElement.src = url
+        this.audioElement.crossOrigin = 'anonymous'
+        this.audioElement.preload = 'auto'
+      }
+
+      if (at.volume !== undefined) {
+        this.audioElement.volume = at.volume
+      }
+
+      this.audioElement.onloadedmetadata = () => {
+        this.audioLoaded = true
+        this.audioDuration = this.audioElement.duration
+        if (this.script?.audioTrack) {
+          this.script.audioTrack.duration = this.audioDuration
+        }
+      }
+
+      this.audioElement.onerror = (e) => {
+        console.error('Audio load error', e)
+        this.audioLoaded = false
+      }
+    },
+
+    destroyAudio() {
+      if (this.audioElement) {
+        this.audioElement.pause()
+        this.audioElement.src = ''
+        this.audioElement = null
+      }
+      this.audioUrl = ''
+      this.audioLoaded = false
+      this.isAudioPlaying = false
+      this.audioDuration = 0
+      this.syncedKeyframes.clear()
+    },
+
     play() {
       if (this.isPlaying) return
       this.isPlaying = true
       const interval = 1000 / this.fps
       
+      if (this.audioElement && this.audioLoaded) {
+        const startTime = (this.script?.audioTrack?.startTime || 0) + this.currentTime
+        if (Math.abs(this.audioElement.currentTime - startTime) > 0.2) {
+          this.audioElement.currentTime = Math.max(0, startTime)
+        }
+        this.audioElement.loop = true
+        this.audioElement.play().then(() => {
+          this.isAudioPlaying = true
+        }).catch(e => {
+          console.warn('Audio play blocked:', e)
+          this.isAudioPlaying = false
+        })
+      }
+
       this.playInterval = setInterval(() => {
         let newTime = this.currentTime + 1 / this.fps
+        let looped = false
         if (newTime >= this.duration) {
           newTime = 0
+          looped = true
         }
-        this.setTime(newTime)
+        this.currentTime = newTime
+        this.updateBonePositions()
+        if (looped && this.audioElement && this.audioLoaded && !this.isAudioPlaying) {
+          this.audioElement.currentTime = this.script?.audioTrack?.startTime || 0
+          this.audioElement.play().then(() => this.isAudioPlaying = true).catch(() => {})
+        }
+        this.checkBeatsAtCurrentTime()
       }, interval)
     },
 
@@ -128,6 +227,10 @@ export const useEditorStore = defineStore('editor', {
       if (this.playInterval) {
         clearInterval(this.playInterval)
         this.playInterval = null
+      }
+      if (this.audioElement) {
+        this.audioElement.pause()
+        this.isAudioPlaying = false
       }
     },
 
@@ -162,6 +265,7 @@ export const useEditorStore = defineStore('editor', {
       }
       
       this.updateBonePositions()
+      this.checkAllKeyframesSynced()
     },
 
     deleteKeyframe(trackIndex, keyframeIndex) {
@@ -170,6 +274,7 @@ export const useEditorStore = defineStore('editor', {
       
       track.keyframes.splice(keyframeIndex, 1)
       this.updateBonePositions()
+      this.checkAllKeyframesSynced()
     },
 
     moveKeyframe(trackIndex, keyframeIndex, newTime) {
@@ -180,6 +285,7 @@ export const useEditorStore = defineStore('editor', {
       track.keyframes[keyframeIndex].time = clampedTime
       track.keyframes.sort((a, b) => a.time - b.time)
       this.updateBonePositions()
+      this.checkAllKeyframesSynced()
     },
 
     setBoneAngle(boneId, angle) {
@@ -200,6 +306,116 @@ export const useEditorStore = defineStore('editor', {
     setDuration(duration) {
       if (this.script) {
         this.script.duration = Math.max(1, duration)
+      }
+    },
+
+    async uploadAudioFile(file, onProgress) {
+      if (!this.script) throw new Error('No script loaded')
+      const result = await uploadAudio(this.script.id, file, onProgress)
+      this.script = await getScript(this.script.id)
+      this.initAudioFromScript()
+      return result
+    },
+
+    async removeAudio() {
+      if (!this.script) return
+      await deleteAudio(this.script.id)
+      this.script = await getScript(this.script.id)
+      this.destroyAudio()
+      this.syncedKeyframes.clear()
+    },
+
+    async saveBeats(beats, opts = {}) {
+      if (!this.script) return
+      const data = {
+        beats,
+        syncTolerance: opts.syncTolerance ?? this.script.audioTrack?.syncTolerance,
+        startTime: opts.startTime ?? this.script.audioTrack?.startTime,
+        volume: opts.volume ?? this.script.audioTrack?.volume
+      }
+      this.script = await updateBeats(this.script.id, data)
+      this.checkAllKeyframesSynced()
+      if (this.audioElement && this.script.audioTrack) {
+        this.audioElement.volume = this.script.audioTrack.volume
+      }
+      return this.script
+    },
+
+    async generateBeatsFromBPM(bpm, offset = 0) {
+      if (!this.script) return []
+      const result = await analyzeBeats(this.script.id, bpm, offset)
+      if (result.beats) {
+        await this.saveBeats(result.beats)
+      }
+      return result
+    },
+
+    addBeat(time) {
+      if (!this.script?.audioTrack) return
+      const beats = [...(this.script.audioTrack.beats || [])]
+      beats.push({ time, label: '', enabled: true })
+      beats.sort((a, b) => a.time - b.time)
+      this.script.audioTrack.beats = beats
+      this.checkAllKeyframesSynced()
+    },
+
+    removeBeat(index) {
+      if (!this.script?.audioTrack) return
+      this.script.audioTrack.beats.splice(index, 1)
+      this.checkAllKeyframesSynced()
+    },
+
+    isKeyframeSynced(trackIdx, kfIdx) {
+      const key = `${trackIdx}-${kfIdx}`
+      return !!this.syncedKeyframes.get(key)
+    },
+
+    getSyncedBeatFor(trackIdx, kfIdx) {
+      const key = `${trackIdx}-${kfIdx}`
+      return this.syncedKeyframes.get(key) || null
+    },
+
+    checkAllKeyframesSynced() {
+      this.syncedKeyframes.clear()
+      if (!this.script?.audioTrack?.beats?.length) return
+
+      const beats = this.script.audioTrack.beats.filter(b => b.enabled)
+      const tol = this.syncTolerance
+
+      this.script.tracks.forEach((track, ti) => {
+        track.keyframes.forEach((kf, ki) => {
+          for (const beat of beats) {
+            if (Math.abs(kf.time - beat.time) <= tol) {
+              const key = `${ti}-${ki}`
+              this.syncedKeyframes.set(key, {
+                beatTime: beat.time,
+                offset: kf.time - beat.time
+              })
+              break
+            }
+          }
+        })
+      })
+    },
+
+    checkBeatsAtCurrentTime() {
+      if (!this.script?.audioTrack?.beats?.length) {
+        if (this.beatFlash !== null) this.beatFlash = null
+        return
+      }
+      const beats = this.script.audioTrack.beats.filter(b => b.enabled)
+      const tol = this.syncTolerance * 0.8
+      let hit = null
+      for (const beat of beats) {
+        if (Math.abs(this.currentTime - beat.time) < tol) {
+          hit = beat.time
+          break
+        }
+      }
+      if (hit !== null && this.beatFlash !== hit) {
+        this.beatFlash = hit
+      } else if (hit === null) {
+        this.beatFlash = null
       }
     }
   }
